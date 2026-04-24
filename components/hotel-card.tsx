@@ -1,0 +1,54 @@
+'use client';
+
+import Image from 'next/image';
+import Link from 'next/link';
+import { MapPin } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { StarRating } from '@/components/star-rating';
+import { Hotel } from '@/lib/types';
+
+interface HotelCardProps {
+  hotel: Hotel;
+  featured?: boolean;
+}
+
+export function HotelCard({ hotel, featured = false }: HotelCardProps) {
+  return (
+    <Card className={`overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${featured ? 'min-w-[300px] flex-shrink-0' : ''}`}>
+      <div className="relative aspect-[4/3] overflow-hidden">
+        <Image
+          src={hotel.image}
+          alt={hotel.name}
+          fill
+          className="object-cover transition-transform duration-300 hover:scale-105"
+        />
+        {featured && (
+          <div className="absolute top-3 left-3 bg-primary text-primary-foreground text-xs font-medium px-2 py-1 rounded-full">
+            AI Recommended
+          </div>
+        )}
+      </div>
+      <CardContent className="p-4">
+        <h3 className="font-semibold text-lg text-foreground line-clamp-1">{hotel.name}</h3>
+        <div className="flex items-center gap-1 text-muted-foreground text-sm mt-1">
+          <MapPin className="h-3.5 w-3.5" />
+          <span>{hotel.location}</span>
+        </div>
+        <div className="flex items-center gap-2 mt-2">
+          <StarRating rating={hotel.rating} size="sm" />
+          <span className="text-sm font-medium text-foreground">{hotel.rating}</span>
+          <span className="text-xs text-muted-foreground">({hotel.reviewCount} reviews)</span>
+        </div>
+        {featured && hotel.aiSummary && (
+          <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{hotel.aiSummary}</p>
+        )}
+        <Link href={`/hotels/${hotel.id}`}>
+          <Button className="w-full mt-4" variant={featured ? 'default' : 'outline'}>
+            View Details
+          </Button>
+        </Link>
+      </CardContent>
+    </Card>
+  );
+}
