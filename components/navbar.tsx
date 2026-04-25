@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Hotel, Search, Menu, X, User, LogOut, Compass, MessageSquare, Settings } from 'lucide-react';
@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/lib/store/useAuth';
 
 interface NavbarProps {
   onSearch?: (query: string) => void;
@@ -23,6 +24,18 @@ export function Navbar({ onSearch }: NavbarProps) {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const { token, userId, logIn, logOut } = useAuth();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (mounted && token && userId) {
+      console.log('Current User ID:', userId);
+    }
+  }, [token, userId, mounted]);
 
   const navLinks = [
     { href: '/explore', label: 'Explore', icon: Compass },
@@ -82,36 +95,46 @@ export function Navbar({ onSearch }: NavbarProps) {
 
           {/* User Menu */}
           <div className="flex items-center gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="rounded-full">
-                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                    <User className="h-4 w-4 text-primary" />
-                  </div>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem asChild>
-                  <Link href="/profile" className="flex items-center gap-2">
-                    <User className="h-4 w-4" />
-                    Profile
+            {mounted && (
+              <>
+                {token ? (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="rounded-full">
+                        <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                          <User className="h-4 w-4 text-primary" />
+                        </div>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-48">
+                      <DropdownMenuItem asChild>
+                        <Link href="/profile" className="flex items-center gap-2">
+                          <User className="h-4 w-4" />
+                          Profile
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href="/my-reviews" className="flex items-center gap-2">
+                          <MessageSquare className="h-4 w-4" />
+                          My Reviews
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => logOut()} className="flex items-center gap-2 text-destructive">
+                        <LogOut className="h-4 w-4" />
+                        Logout
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ) : (
+                  <Link href="/login">
+                    <Button size="sm">
+                      Login
+                    </Button>
                   </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/my-reviews" className="flex items-center gap-2">
-                    <MessageSquare className="h-4 w-4" />
-                    My Reviews
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link href="/login" className="flex items-center gap-2 text-destructive">
-                    <LogOut className="h-4 w-4" />
-                    Logout
-                  </Link>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                )}
+              </>
+            )}
 
             {/* Mobile Menu Button */}
             <Button

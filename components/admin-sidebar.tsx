@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { Hotel, Users, Building2, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/lib/store/useAuth';
 
 const navItems = [
   { href: '/admin/users', label: 'Users', icon: Users },
@@ -13,6 +14,7 @@ const navItems = [
 
 export function AdminSidebar() {
   const pathname = usePathname();
+  const { logOut } = useAuth();
 
   return (
     <aside className="w-64 min-h-screen bg-card border-r flex flex-col">
@@ -49,12 +51,14 @@ export function AdminSidebar() {
 
       {/* Logout */}
       <div className="p-4 border-t">
-        <Link href="/login">
-          <Button variant="ghost" className="w-full justify-start gap-3 text-muted-foreground hover:text-destructive">
-            <LogOut className="h-4 w-4" />
-            Logout
-          </Button>
-        </Link>
+        <Button 
+          variant="ghost" 
+          className="w-full justify-start gap-3 text-muted-foreground hover:text-destructive"
+          onClick={() => logOut()}
+        >
+          <LogOut className="h-4 w-4" />
+          Logout
+        </Button>
       </div>
     </aside>
   );

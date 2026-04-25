@@ -22,6 +22,7 @@ export function HotelCard({ hotel, featured = false }: HotelCardProps) {
           alt={hotel.name}
           fill
           className="object-cover transition-transform duration-300 hover:scale-105"
+          priority={featured}
         />
         {featured && (
           <div className="absolute top-3 left-3 bg-primary text-primary-foreground text-xs font-medium px-2 py-1 rounded-full">

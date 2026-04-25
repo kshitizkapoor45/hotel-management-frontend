@@ -1,9 +1,12 @@
 import type { Metadata, Viewport } from 'next'
 import { Plus_Jakarta_Sans, JetBrains_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
+import StoreProvider from '@/lib/store/StoreProvider'
+import OAuthProvider from '@/lib/store/OAuthProvider'
+import { Toaster } from '@/components/ui/sonner'
 import './globals.css'
 
-const plusJakarta = Plus_Jakarta_Sans({ 
+const plusJakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
   variable: '--font-plus-jakarta'
 });
@@ -32,8 +35,16 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="bg-background">
-      <body className={`${plusJakarta.variable} ${jetbrainsMono.variable} font-sans antialiased`}>
-        {children}
+      <body
+        className={`${plusJakarta.variable} ${jetbrainsMono.variable} font-sans antialiased`}
+        suppressHydrationWarning
+      >
+        <OAuthProvider>
+          <StoreProvider>
+            {children}
+            <Toaster position="top-right" richColors />
+          </StoreProvider>
+        </OAuthProvider>
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>
