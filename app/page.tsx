@@ -7,24 +7,26 @@ import { Loader2 } from 'lucide-react';
 
 export default function Home() {
   const router = useRouter();
-  const { token, loginInProgress } = useAuth();
+  const { token, loginInProgress, isAdmin } = useAuth();
 
   useEffect(() => {
-    // Only redirect if we're not currently processing a login callback
     const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
     const hasCode = params.has('code');
 
+    // If we have a token, we are successfully logged in
     if (token) {
-      // If we have a token, we're authenticated
-      router.replace('/explore');
-    } else if (!hasCode) {
-      // If there's no 'code' in the URL, we're not in a login callback flow
-      // so we can safely redirect to explore (even if logged out)
+      if (isAdmin) {
+        router.replace('/admin/dashboard');
+      } else {
+        router.replace('/explore');
+      }
+    } 
+    // If we are NOT currently in the middle of a login callback flow -> go to explore
+    else if (!loginInProgress && !hasCode) {
       router.replace('/explore');
     }
-    // If there IS a code, we stay here and show the loading state 
-    // until 'token' becomes truthy and triggers the first 'if'
-  }, [token, router]);
+    // If we have a 'code' but no 'token' yet, we stay here and wait for the exchange
+  }, [token, loginInProgress, isAdmin, router]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-background">

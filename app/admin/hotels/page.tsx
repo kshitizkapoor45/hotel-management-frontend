@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
-import { Search, Pencil, Trash2, Plus, Building2 } from 'lucide-react';
+import { Search, Pencil, Trash2, Plus, Building2, Loader2, Sparkles } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,22 +24,24 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { mockHotels } from '@/lib/mock-data';
-import { Hotel } from '@/lib/types';
+import { useGetHotelsQuery, useRegisterHotelMutation } from '@/lib/store/services/hotelApi';
 import { StarRating } from '@/components/star-rating';
 import { EmptyState } from '@/components/empty-state';
+import { toast } from 'sonner';
+import { Badge } from '@/components/ui/badge';
 
 export default function HotelsAdminPage() {
-  const [hotels, setHotels] = useState(mockHotels);
+  const { data: hotels = [], isLoading, isError } = useGetHotelsQuery();
+  const [registerHotel, { isLoading: isRegistering }] = useRegisterHotelMutation();
+  
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [editingHotel, setEditingHotel] = useState<Hotel | null>(null);
-  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  
   const [formData, setFormData] = useState({
     name: '',
     location: '',
-    description: '',
-    image: '',
+    about: '',
+    amenities: '', // Input as comma-separated string
   });
 
   const filteredHotels = hotels.filter(
@@ -49,57 +51,47 @@ export default function HotelsAdminPage() {
   );
 
   const handleOpenAdd = () => {
-    setFormData({ name: '', location: '', description: '', image: '' });
+    setFormData({ name: '', location: '', about: '', amenities: '' });
     setIsAddModalOpen(true);
   };
 
-  const handleAdd = () => {
-    const newHotel: Hotel = {
-      id: String(Date.now()),
-      name: formData.name,
-      location: formData.location,
-      description: formData.description,
-      image: formData.image || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&q=80',
-      rating: 0,
-      reviewCount: 0,
-      amenities: [],
-    };
-    setHotels([newHotel, ...hotels]);
-    setIsAddModalOpen(false);
+  const handleAdd = async () => {
+    try {
+      // Split comma-separated string into array and clean up whitespace
+      const amenitiesArray = formData.amenities
+        .split(',')
+        .map(a => a.trim())
+        .filter(a => a !== '');
+
+      await registerHotel({
+        name: formData.name,
+        location: formData.location,
+        about: formData.about,
+        amenities: amenitiesArray
+      }).unwrap();
+      
+      toast.success('Hotel registered successfully!');
+      setIsAddModalOpen(false);
+    } catch (error) {
+      console.error('Failed to register hotel:', error);
+      toast.error('Failed to register hotel. Please try again.');
+    }
   };
 
-  const handleEdit = (hotel: Hotel) => {
-    setEditingHotel(hotel);
-    setFormData({
-      name: hotel.name,
-      location: hotel.location,
-      description: hotel.description,
-      image: hotel.image,
-    });
-  };
-
-  const handleSaveEdit = () => {
-    if (!editingHotel) return;
-    setHotels(
-      hotels.map((h) =>
-        h.id === editingHotel.id
-          ? { ...h, ...formData }
-          : h
-      )
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 text-primary animate-spin" />
+        <p className="text-muted-foreground mt-4">Fetching hotel listings...</p>
+      </div>
     );
-    setEditingHotel(null);
-  };
-
-  const handleDelete = (hotelId: string) => {
-    setHotels(hotels.filter((h) => h.id !== hotelId));
-    setDeleteConfirm(null);
-  };
+  }
 
   return (
     <div className="p-8">
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-foreground">Hotel Management</h1>
-        <p className="text-muted-foreground mt-1">Manage hotel listings</p>
+        <p className="text-muted-foreground mt-1">Manage hotel listings and inventory</p>
       </div>
 
       <Card>
@@ -107,7 +99,7 @@ export default function HotelsAdminPage() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <CardTitle>All Hotels</CardTitle>
-              <CardDescription>{hotels.length} hotels listed</CardDescription>
+              <CardDescription>{hotels.length} hotels synced from backend</CardDescription>
             </div>
             <div className="flex items-center gap-3">
               <div className="relative w-full sm:w-64">
@@ -127,14 +119,17 @@ export default function HotelsAdminPage() {
           </div>
         </CardHeader>
         <CardContent>
-          {filteredHotels.length > 0 ? (
+          {isError ? (
+            <div className="text-center py-12 text-destructive">
+              <p>Failed to load hotels. Please ensure the backend is running.</p>
+            </div>
+          ) : filteredHotels.length > 0 ? (
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Hotel</TableHead>
                   <TableHead>Location</TableHead>
-                  <TableHead>Rating</TableHead>
-                  <TableHead>Reviews</TableHead>
+                  <TableHead>Amenities</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -143,31 +138,34 @@ export default function HotelsAdminPage() {
                   <TableRow key={hotel.id}>
                     <TableCell>
                       <div className="flex items-center gap-3">
-                        <div className="relative h-12 w-16 rounded-lg overflow-hidden flex-shrink-0">
-                          <Image
-                            src={hotel.image}
-                            alt={hotel.name}
-                            fill
-                            className="object-cover"
-                          />
+                        <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                          <Building2 className="h-5 w-5 text-primary" />
                         </div>
-                        <span className="font-medium">{hotel.name}</span>
+                        <div>
+                          <p className="font-medium">{hotel.name}</p>
+                          <p className="text-xs text-muted-foreground max-w-[200px] truncate">{hotel.about}</p>
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell>{hotel.location}</TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-2">
-                        <StarRating rating={hotel.rating} size="sm" />
-                        <span>{hotel.rating}</span>
+                      <div className="flex flex-wrap gap-1 max-w-[300px]">
+                        {hotel.amenities?.slice(0, 3).map((a, idx) => (
+                          <Badge key={idx} variant="secondary" className="text-[10px] py-0">
+                            {a}
+                          </Badge>
+                        ))}
+                        {hotel.amenities?.length > 3 && (
+                          <span className="text-[10px] text-muted-foreground">+{hotel.amenities.length - 3} more</span>
+                        )}
                       </div>
                     </TableCell>
-                    <TableCell>{hotel.reviewCount}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => handleEdit(hotel)}
+                          disabled // Edit not implemented in backend yet
                         >
                           <Pencil className="h-4 w-4" />
                         </Button>
@@ -175,7 +173,7 @@ export default function HotelsAdminPage() {
                           variant="ghost"
                           size="icon"
                           className="text-destructive hover:text-destructive"
-                          onClick={() => setDeleteConfirm(hotel.id)}
+                          disabled // Delete not implemented in backend yet
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -199,130 +197,74 @@ export default function HotelsAdminPage() {
 
       {/* Add Hotel Dialog */}
       <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>Add New Hotel</DialogTitle>
-            <DialogDescription>Enter hotel information</DialogDescription>
+            <DialogDescription>Enter hotel information for registration</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="add-name">Hotel Name</Label>
-              <Input
-                id="add-name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="The Grand Hotel"
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="add-name">Hotel Name</Label>
+                <Input
+                  id="add-name"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  placeholder="The Grand Hotel"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="add-location">Location</Label>
+                <Input
+                  id="add-location"
+                  value={formData.location}
+                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                  placeholder="Paris, France"
+                />
+              </div>
             </div>
+            
             <div className="space-y-2">
-              <Label htmlFor="add-location">Location</Label>
-              <Input
-                id="add-location"
-                value={formData.location}
-                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                placeholder="Paris, France"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="add-description">Description</Label>
+              <Label htmlFor="add-about">About / Description</Label>
               <Textarea
-                id="add-description"
+                id="add-about"
                 rows={3}
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                value={formData.about}
+                onChange={(e) => setFormData({ ...formData, about: e.target.value })}
                 placeholder="A luxurious hotel with amazing views..."
+                className="resize-none"
               />
             </div>
+
             <div className="space-y-2">
-              <Label htmlFor="add-image">Image URL</Label>
-              <Input
-                id="add-image"
-                value={formData.image}
-                onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                placeholder="https://example.com/hotel.jpg"
+              <Label htmlFor="add-amenities" className="flex items-center gap-2">
+                <Sparkles className="h-3 w-3 text-amber-500" />
+                Amenities
+              </Label>
+              <Textarea
+                id="add-amenities"
+                rows={2}
+                value={formData.amenities}
+                onChange={(e) => setFormData({ ...formData, amenities: e.target.value })}
+                placeholder="Free WiFi, Swimming Pool, Fitness Center..."
+                className="resize-none"
               />
+              <p className="text-[10px] text-muted-foreground">Separate items with commas</p>
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsAddModalOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleAdd} disabled={!formData.name || !formData.location}>
-              Add Hotel
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Hotel Dialog */}
-      <Dialog open={!!editingHotel} onOpenChange={() => setEditingHotel(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Hotel</DialogTitle>
-            <DialogDescription>Update hotel information</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="edit-name">Hotel Name</Label>
-              <Input
-                id="edit-name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-location">Location</Label>
-              <Input
-                id="edit-location"
-                value={formData.location}
-                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-description">Description</Label>
-              <Textarea
-                id="edit-description"
-                rows={3}
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-image">Image URL</Label>
-              <Input
-                id="edit-image"
-                value={formData.image}
-                onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditingHotel(null)}>
-              Cancel
-            </Button>
-            <Button onClick={handleSaveEdit}>Save Changes</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={!!deleteConfirm} onOpenChange={() => setDeleteConfirm(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete Hotel</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete this hotel? This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteConfirm(null)}>
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={() => deleteConfirm && handleDelete(deleteConfirm)}
-            >
-              Delete
+            <Button onClick={handleAdd} disabled={isRegistering || !formData.name || !formData.location}>
+              {isRegistering ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Registering...
+                </>
+              ) : (
+                'Add Hotel'
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

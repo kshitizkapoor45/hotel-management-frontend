@@ -1,11 +1,15 @@
 import { configureStore } from '@reduxjs/toolkit';
 import authReducer from './features/auth/authSlice';
+import { hotelApi } from './services/hotelApi';
 
 export const makeStore = () => {
   return configureStore({
     reducer: {
       auth: authReducer,
+      [hotelApi.reducerPath]: hotelApi.reducer,
     },
+    middleware: (getDefaultMiddleware) =>
+      getDefaultMiddleware().concat(hotelApi.middleware),
   });
 };
 

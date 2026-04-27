@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Hotel, Search, Menu, X, User, LogOut, Compass, MessageSquare, Settings } from 'lucide-react';
+import { Hotel, Search, Menu, X, User, LogOut, Compass, MessageSquare, Settings, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -24,24 +24,32 @@ export function Navbar({ onSearch }: NavbarProps) {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const { token, userId, logIn, logOut } = useAuth();
+  const { token, logIn, logOut, isAdmin } = useAuth();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  useEffect(() => {
-    if (mounted && token && userId) {
-      console.log('Current User ID:', userId);
-    }
-  }, [token, userId, mounted]);
-
-  const navLinks = [
+  // Links visible to everyone
+  const publicLinks = [
     { href: '/explore', label: 'Explore', icon: Compass },
+  ];
+
+  // Links visible only to logged-in users
+  const privateLinks = [
     { href: '/my-reviews', label: 'My Reviews', icon: MessageSquare },
     { href: '/profile', label: 'Profile', icon: Settings },
   ];
+
+  // Link only for admins
+  const adminLinks = [
+    { href: '/admin/dashboard', label: 'Admin Dashboard', icon: Lock },
+  ];
+
+  const currentNavLinks = token 
+    ? [...publicLinks, ...privateLinks, ...(isAdmin ? adminLinks : [])] 
+    : publicLinks;
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,7 +74,7 @@ export function Navbar({ onSearch }: NavbarProps) {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 type="search"
-                placeholder="Search hotels by name or location..."
+                placeholder="Search hotels..."
                 className="pl-10 w-full"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -76,7 +84,7 @@ export function Navbar({ onSearch }: NavbarProps) {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-1">
-            {navLinks.map((link) => (
+            {currentNavLinks.map((link) => (
               <Link key={link.href} href={link.href}>
                 <Button
                   variant={pathname === link.href ? 'secondary' : 'ghost'}
@@ -93,7 +101,7 @@ export function Navbar({ onSearch }: NavbarProps) {
             ))}
           </nav>
 
-          {/* User Menu */}
+          {/* User Menu / Login Section */}
           <div className="flex items-center gap-2">
             {mounted && (
               <>
@@ -127,11 +135,18 @@ export function Navbar({ onSearch }: NavbarProps) {
                     </DropdownMenuContent>
                   </DropdownMenu>
                 ) : (
-                  <Link href="/login">
-                    <Button size="sm">
-                      Login
+                  <div className="flex items-center gap-2">
+                    <Button onClick={() => logIn()} variant="ghost" size="sm">
+                      Sign In
                     </Button>
-                  </Link>
+                    <Button 
+                      onClick={() => logIn({ kc_action: 'register' })} 
+                      size="sm" 
+                      className="bg-primary hover:bg-primary/90"
+                    >
+                      Sign Up
+                    </Button>
+                  </div>
                 )}
               </>
             )}
@@ -148,26 +163,10 @@ export function Navbar({ onSearch }: NavbarProps) {
           </div>
         </div>
 
-        {/* Mobile Search */}
-        <div className="md:hidden pb-3">
-          <form onSubmit={handleSearch}>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Search hotels..."
-                className="pl-10 w-full"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-          </form>
-        </div>
-
         {/* Mobile Navigation */}
         {mobileMenuOpen && (
           <nav className="md:hidden border-t py-3 space-y-1">
-            {navLinks.map((link) => (
+            {currentNavLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}

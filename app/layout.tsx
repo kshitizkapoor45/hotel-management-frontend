@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import { Plus_Jakarta_Sans, JetBrains_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import StoreProvider from '@/lib/store/StoreProvider'
-import OAuthProvider from '@/lib/store/OAuthProvider'
+import { OAuthProvider } from '@/lib/store/OAuthProvider'
 import { Toaster } from '@/components/ui/sonner'
 import './globals.css'
 
