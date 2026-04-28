@@ -56,7 +56,7 @@ export const useAuth = () => {
         .catch(() => {
           console.error('Refresh failed → logging out');
           keycloak.logout({
-            redirectUri: window.location.origin + '/explore',
+            redirectUri: window.location.origin,
           });
         });
     };
@@ -87,7 +87,7 @@ export const useAuth = () => {
     dispatch(clearAuth());
 
     keycloak.logout({
-      redirectUri: window.location.origin + '/explore',
+      redirectUri: window.location.origin,
     });
   };
 
