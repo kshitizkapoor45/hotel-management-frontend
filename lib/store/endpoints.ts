@@ -6,6 +6,10 @@ export const ENDPOINTS = {
   HOTEL: {
     GET_ALL: 'hotel/',
     REGISTER: 'hotel/register',
+    RECOMMENDATIONS: 'hotel/recommendations',
   },
-  // We can add more services here later (e.g. USER, REVIEW)
+  USER: {
+    PROFILE: 'user/profile',
+    EDIT: 'user/edit',
+  },
 };

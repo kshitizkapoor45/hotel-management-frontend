@@ -6,26 +6,20 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { HotelCard } from '@/components/hotel-card';
 import { HotelSkeletonGrid } from '@/components/hotel-skeleton';
-import { mockHotels } from '@/lib/mock-data';
+import { useGetHotelsQuery, useGetRecommendationsQuery } from '@/lib/store/services/hotelApi';
 
 export default function ExplorePage() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    // Simulate loading
-    const timer = setTimeout(() => setIsLoading(false), 1000);
-    return () => clearTimeout(timer);
-  }, []);
+  const { data: hotels, isLoading: isLoadingHotels } = useGetHotelsQuery();
+  const { data: recommendedHotels, isLoading: isLoadingRecommended } = useGetRecommendationsQuery();
 
-  const filteredHotels = mockHotels.filter(
+  const filteredHotels = (hotels || []).filter(
     (hotel) =>
       hotel.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       hotel.location.toLowerCase().includes(searchQuery.toLowerCase())
   );
-
-  const recommendedHotels = mockHotels.slice(0, 4);
 
   const scrollLeft = () => {
     scrollContainerRef.current?.scrollBy({ left: -320, behavior: 'smooth' });
@@ -34,6 +28,8 @@ export default function ExplorePage() {
   const scrollRight = () => {
     scrollContainerRef.current?.scrollBy({ left: 320, behavior: 'smooth' });
   };
+
+  const isLoading = isLoadingHotels || isLoadingRecommended;
 
   return (
     <div className="container mx-auto px-4 py-6">
@@ -84,11 +80,19 @@ export default function ExplorePage() {
             className="flex gap-6 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory"
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
           >
-            {recommendedHotels.map((hotel) => (
-              <div key={hotel.id} className="snap-start">
-                <HotelCard hotel={hotel} featured />
-              </div>
-            ))}
+            {isLoadingRecommended ? (
+              Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="min-w-[300px] h-[350px] rounded-2xl bg-muted animate-pulse" />
+              ))
+            ) : recommendedHotels && recommendedHotels.length > 0 ? (
+              recommendedHotels.map((hotel) => (
+                <div key={hotel.id} className="snap-start">
+                  <HotelCard hotel={hotel} featured />
+                </div>
+              ))
+            ) : (
+              <p className="text-muted-foreground">No recommendations available at the moment.</p>
+            )}
           </div>
         </section>
       )}

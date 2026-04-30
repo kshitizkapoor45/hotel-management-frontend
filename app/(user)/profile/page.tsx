@@ -1,33 +1,60 @@
 'use client';
 
-import { useState } from 'react';
-import { User, Mail, Phone, MapPin, Save, Check } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { User, Mail, Phone, MapPin, Save, Check, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { currentUser } from '@/lib/mock-data';
+import { useGetProfileQuery, useUpdateProfileMutation } from '@/lib/store/services/userApi';
 
 export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
   const [showSaved, setShowSaved] = useState(false);
+  const { data: profile, isLoading } = useGetProfileQuery();
+  const [updateProfile, { isLoading: isUpdating }] = useUpdateProfileMutation();
+
   const [formData, setFormData] = useState({
-    name: currentUser.name,
-    email: currentUser.email,
-    mobile: currentUser.mobile,
-    location: currentUser.location || '',
+    name: '',
+    email: '',
+    mobileNumber: '',
+    location: '',
   });
 
+  useEffect(() => {
+    if (profile) {
+      setFormData({
+        name: profile.name,
+        email: profile.email,
+        mobileNumber: profile.mobileNumber,
+        location: profile.location || '',
+      });
+    }
+  }, [profile]);
+
   const handleSave = async () => {
-    setIsSaving(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setIsSaving(false);
-    setIsEditing(false);
-    setShowSaved(true);
-    setTimeout(() => setShowSaved(false), 2000);
+    try {
+      await updateProfile({
+        name: formData.name,
+        location: formData.location,
+        mobileNumber: formData.mobileNumber,
+      }).unwrap();
+      
+      setIsEditing(false);
+      setShowSaved(true);
+      setTimeout(() => setShowSaved(false), 2000);
+    } catch (error) {
+      console.error('Failed to update profile:', error);
+    }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -63,9 +90,9 @@ export default function ProfilePage() {
                   <Button variant="outline" onClick={() => setIsEditing(false)}>
                     Cancel
                   </Button>
-                  <Button onClick={handleSave} disabled={isSaving} className="gap-2">
+                  <Button onClick={handleSave} disabled={isUpdating} className="gap-2">
                     <Save className="h-4 w-4" />
-                    {isSaving ? 'Saving...' : 'Save'}
+                    {isUpdating ? 'Saving...' : 'Save'}
                   </Button>
                 </div>
               )}
@@ -105,9 +132,8 @@ export default function ProfilePage() {
                     id="email"
                     type="email"
                     value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    disabled={!isEditing}
-                    className="pl-10"
+                    disabled={true} // Email cannot be edited
+                    className="pl-10 bg-muted/50"
                   />
                 </div>
               </div>
@@ -119,8 +145,8 @@ export default function ProfilePage() {
                   <Input
                     id="mobile"
                     type="tel"
-                    value={formData.mobile}
-                    onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
+                    value={formData.mobileNumber}
+                    onChange={(e) => setFormData({ ...formData, mobileNumber: e.target.value })}
                     disabled={!isEditing}
                     className="pl-10"
                   />

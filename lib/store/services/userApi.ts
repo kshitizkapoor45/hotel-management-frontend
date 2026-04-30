@@ -3,25 +3,18 @@ import { HOTEL_SERVICE_BASE_URL, ENDPOINTS } from '../endpoints';
 import { getAccessTokenValue } from '../features/auth/authTokenProvider';
 import keycloak from '../features/auth/keycloak';
 
-export interface Hotel {
-  id: string;
+export interface UserProfile {
   name: string;
+  email: string;
+  keycloakId: string;
   location: string;
-  description: string;
-  image: string;
-  rating: number;
-  reviewCount: number;
-  amenities: string[];
-  aiSummary?: string;
-  aiHighlights?: string[];
-  aiSentiment?: 'positive' | 'neutral' | 'negative';
+  mobileNumber: string;
 }
 
-export interface CreateHotelRequest {
+export interface UpdateProfileRequest {
   name: string;
   location: string;
-  about: string;
-  amenities: string[];
+  mobileNumber: string;
 }
 
 const baseQuery = fetchBaseQuery({
@@ -45,9 +38,7 @@ const baseQueryWithReauth: BaseQueryFn<
   if (result.error && result.error.status === 401) {
     console.warn('401 detected → trying token refresh');
     try {
-      // Attempt to refresh the token if it's expired
       await keycloak.updateToken(30);
-      // Retry the original request with the new token
       result = await baseQuery(args, api, extraOptions);
     } catch (err) {
       console.error('Refresh failed → logout');
@@ -58,28 +49,24 @@ const baseQueryWithReauth: BaseQueryFn<
   return result;
 };
 
-export const hotelApi = createApi({
-  reducerPath: 'hotelApi',
+export const userApi = createApi({
+  reducerPath: 'userApi',
   baseQuery: baseQueryWithReauth,
-  tagTypes: ['Hotel'],
+  tagTypes: ['UserProfile'],
   endpoints: (builder) => ({
-    getHotels: builder.query<Hotel[], void>({
-      query: () => ENDPOINTS.HOTEL.GET_ALL,
-      providesTags: ['Hotel'],
+    getProfile: builder.query<UserProfile, void>({
+      query: () => ENDPOINTS.USER.PROFILE,
+      providesTags: ['UserProfile'],
     }),
-    getRecommendations: builder.query<Hotel[], void>({
-      query: () => ENDPOINTS.HOTEL.RECOMMENDATIONS,
-      providesTags: ['Hotel'],
-    }),
-    registerHotel: builder.mutation<Hotel, CreateHotelRequest>({
-      query: (newHotel) => ({
-        url: ENDPOINTS.HOTEL.REGISTER,
-        method: 'POST',
-        body: newHotel,
+    updateProfile: builder.mutation<UserProfile, UpdateProfileRequest>({
+      query: (profileData) => ({
+        url: ENDPOINTS.USER.EDIT,
+        method: 'PUT',
+        body: profileData,
       }),
-      invalidatesTags: ['Hotel'],
+      invalidatesTags: ['UserProfile'],
     }),
   }),
 });
 
-export const { useGetHotelsQuery, useGetRecommendationsQuery, useRegisterHotelMutation } = hotelApi;
+export const { useGetProfileQuery, useUpdateProfileMutation } = userApi;
