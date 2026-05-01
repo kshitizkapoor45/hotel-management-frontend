@@ -7,8 +7,8 @@ export interface Hotel {
   id: string;
   name: string;
   location: string;
-  description: string;
-  image: string;
+  about: string;
+  imageUrl: string;
   rating: number;
   reviewCount: number;
   amenities: string[];
@@ -22,6 +22,15 @@ export interface CreateHotelRequest {
   location: string;
   about: string;
   amenities: string[];
+  imageUrl?: string;
+}
+
+export interface UpdateHotelRequest extends CreateHotelRequest {
+  id: string;
+}
+
+export interface FileUploadResponse {
+  message: string;
 }
 
 const baseQuery = fetchBaseQuery({
@@ -43,15 +52,18 @@ const baseQueryWithReauth: BaseQueryFn<
   let result = await baseQuery(args, api, extraOptions);
 
   if (result.error && result.error.status === 401) {
-    console.warn('401 detected → trying token refresh');
-    try {
-      // Attempt to refresh the token if it's expired
-      await keycloak.updateToken(30);
-      // Retry the original request with the new token
-      result = await baseQuery(args, api, extraOptions);
-    } catch (err) {
-      console.error('Refresh failed → logout');
-      keycloak.logout();
+    // Only attempt refresh if we think we are logged in
+    if (keycloak.authenticated) {
+      console.warn('401 detected → trying token refresh');
+      try {
+        // Attempt to refresh the token if it's expired
+        await keycloak.updateToken(30);
+        // Retry the original request with the new token
+        result = await baseQuery(args, api, extraOptions);
+      } catch (err) {
+        console.error('Refresh failed → logout');
+        keycloak.logout();
+      }
     }
   }
 
@@ -79,7 +91,28 @@ export const hotelApi = createApi({
       }),
       invalidatesTags: ['Hotel'],
     }),
+    updateHotel: builder.mutation<Hotel, UpdateHotelRequest>({
+      query: (updatedHotel) => ({
+        url: ENDPOINTS.HOTEL.EDIT,
+        method: 'PUT',
+        body: updatedHotel,
+      }),
+      invalidatesTags: ['Hotel'],
+    }),
+    uploadHotelImage: builder.mutation<FileUploadResponse, FormData>({
+      query: (formData) => ({
+        url: ENDPOINTS.HOTEL.FILE_UPLOAD,
+        method: 'POST',
+        body: formData,
+      }),
+    }),
   }),
 });
 
-export const { useGetHotelsQuery, useGetRecommendationsQuery, useRegisterHotelMutation } = hotelApi;
+export const {
+  useGetHotelsQuery,
+  useGetRecommendationsQuery,
+  useRegisterHotelMutation,
+  useUpdateHotelMutation,
+  useUploadHotelImageMutation
+} = hotelApi;

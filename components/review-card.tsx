@@ -21,11 +21,11 @@ export function ReviewCard({
   onEdit,
   onDelete,
 }: ReviewCardProps) {
-  const formattedDate = new Date(review.createdAt).toLocaleDateString('en-US', {
+  const formattedDate = review.createdAt ? new Date(review.createdAt).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
-  });
+  }) : 'Recently';
 
   return (
     <Card className="transition-all duration-200 hover:shadow-md">

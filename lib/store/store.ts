@@ -2,6 +2,7 @@ import { configureStore } from '@reduxjs/toolkit';
 import authReducer from './features/auth/authSlice';
 import { hotelApi } from './services/hotelApi';
 import { userApi } from './services/userApi';
+import { ratingApi } from './services/ratingApi';
 
 export const makeStore = () => {
   return configureStore({
@@ -9,9 +10,10 @@ export const makeStore = () => {
       auth: authReducer,
       [hotelApi.reducerPath]: hotelApi.reducer,
       [userApi.reducerPath]: userApi.reducer,
+      [ratingApi.reducerPath]: ratingApi.reducer,
     },
     middleware: (getDefaultMiddleware) =>
-      getDefaultMiddleware().concat(hotelApi.middleware, userApi.middleware),
+      getDefaultMiddleware().concat(hotelApi.middleware, userApi.middleware, ratingApi.middleware),
   });
 };
 

@@ -12,8 +12,8 @@ export interface Hotel {
   id: string;
   name: string;
   location: string;
-  description: string;
-  image: string;
+  about: string;
+  imageUrl: string;
   rating: number;
   reviewCount: number;
   amenities: string[];

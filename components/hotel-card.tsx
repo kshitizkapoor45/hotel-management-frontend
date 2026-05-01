@@ -6,7 +6,9 @@ import { MapPin } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { StarRating } from '@/components/star-rating';
+import { RateHotelDialog } from '@/components/rate-hotel-dialog';
 import { Hotel } from '@/lib/types';
+import { Star } from 'lucide-react';
 
 interface HotelCardProps {
   hotel: Hotel;
@@ -18,7 +20,7 @@ export function HotelCard({ hotel, featured = false }: HotelCardProps) {
     <Card className={`overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${featured ? 'min-w-[300px] flex-shrink-0' : ''}`}>
       <div className="relative aspect-[4/3] overflow-hidden">
         <Image
-          src={hotel.image}
+          src={hotel.imageUrl}
           alt={hotel.name}
           fill
           className="object-cover transition-transform duration-300 hover:scale-105"
@@ -44,11 +46,22 @@ export function HotelCard({ hotel, featured = false }: HotelCardProps) {
         {featured && hotel.aiSummary && (
           <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{hotel.aiSummary}</p>
         )}
-        <Link href={`/hotels/${hotel.id}`}>
-          <Button className="w-full mt-4" variant={featured ? 'default' : 'outline'}>
-            View Details
-          </Button>
-        </Link>
+        <div className="flex gap-2 mt-4">
+          <Link href={`/hotels/${hotel.id}`} className="flex-1">
+            <Button className="w-full" variant={featured ? 'default' : 'outline'}>
+              View Details
+            </Button>
+          </Link>
+          <RateHotelDialog 
+            hotelId={hotel.id} 
+            hotelName={hotel.name}
+            trigger={
+              <Button variant="ghost" size="icon" className="shrink-0 border">
+                <Star className="h-4 w-4" />
+              </Button>
+            }
+          />
+        </div>
       </CardContent>
     </Card>
   );

@@ -67,7 +67,7 @@ export default function HotelDetailsPage({ params }: { params: Promise<{ id: str
       {/* Hero Banner */}
       <div className="relative h-[300px] md:h-[400px] w-full">
         <Image
-          src={hotel.image}
+          src={hotel.imageUrl}
           alt={hotel.name}
           fill
           className="object-cover"
@@ -112,7 +112,7 @@ export default function HotelDetailsPage({ params }: { params: Promise<{ id: str
                 ))}
               </div>
             </div>
-            <p className="text-muted-foreground mt-4 leading-relaxed">{hotel.description}</p>
+            <p className="text-muted-foreground mt-4 leading-relaxed">{hotel.about}</p>
           </CardContent>
         </Card>
 

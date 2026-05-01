@@ -7,13 +7,17 @@ import { Button } from '@/components/ui/button';
 import { HotelCard } from '@/components/hotel-card';
 import { HotelSkeletonGrid } from '@/components/hotel-skeleton';
 import { useGetHotelsQuery, useGetRecommendationsQuery } from '@/lib/store/services/hotelApi';
+import { useAuth } from '@/lib/store/useAuth';
 
 export default function ExplorePage() {
   const [searchQuery, setSearchQuery] = useState('');
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
+  const { isAuthenticated } = useAuth();
   const { data: hotels, isLoading: isLoadingHotels } = useGetHotelsQuery();
-  const { data: recommendedHotels, isLoading: isLoadingRecommended } = useGetRecommendationsQuery();
+  const { data: recommendedHotels, isLoading: isLoadingRecommended } = useGetRecommendationsQuery(undefined, {
+    skip: !isAuthenticated,
+  });
 
   const filteredHotels = (hotels || []).filter(
     (hotel) =>
@@ -74,7 +78,7 @@ export default function ExplorePage() {
               </Button>
             </div>
           </div>
-          
+
           <div
             ref={scrollContainerRef}
             className="flex gap-6 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory"
@@ -84,6 +88,8 @@ export default function ExplorePage() {
               Array.from({ length: 4 }).map((_, i) => (
                 <div key={i} className="min-w-[300px] h-[350px] rounded-2xl bg-muted animate-pulse" />
               ))
+            ) : !isAuthenticated ? (
+              <p className="text-muted-foreground italic bg-muted/20 p-4 rounded-xl border border-dashed">Log in to see personalized recommendations based on your preferences.</p>
             ) : recommendedHotels && recommendedHotels.length > 0 ? (
               recommendedHotels.map((hotel) => (
                 <div key={hotel.id} className="snap-start">
