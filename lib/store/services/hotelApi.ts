@@ -78,10 +78,40 @@ export const hotelApi = createApi({
     getHotels: builder.query<Hotel[], void>({
       query: () => ENDPOINTS.HOTEL.GET_ALL,
       providesTags: ['Hotel'],
+      transformResponse: (response: any) => {
+        if (!Array.isArray(response)) return [];
+        return response.map((item: any) => {
+          const hotel = item?.hotel || item;
+          const ratings = item?.ratings || [];
+          const totalRating = ratings.reduce((sum: number, r: any) => sum + (r?.rating || 0), 0);
+          const avgRating = ratings.length > 0 ? totalRating / ratings.length : 0;
+
+          return {
+            ...hotel,
+            rating: parseFloat(avgRating.toFixed(1)),
+            reviewCount: ratings.length,
+          };
+        });
+      },
     }),
     getRecommendations: builder.query<Hotel[], void>({
       query: () => ENDPOINTS.HOTEL.RECOMMENDATIONS,
       providesTags: ['Hotel'],
+      transformResponse: (response: any) => {
+        if (!Array.isArray(response)) return [];
+        return response.map((item: any) => {
+          const hotel = item?.hotel || item;
+          const ratings = item?.ratings || [];
+          const totalRating = ratings.reduce((sum: number, r: any) => sum + (r?.rating || 0), 0);
+          const avgRating = ratings.length > 0 ? totalRating / ratings.length : 0;
+
+          return {
+            ...hotel,
+            rating: parseFloat(avgRating.toFixed(1)),
+            reviewCount: ratings.length,
+          };
+        });
+      },
     }),
     registerHotel: builder.mutation<Hotel, CreateHotelRequest>({
       query: (newHotel) => ({

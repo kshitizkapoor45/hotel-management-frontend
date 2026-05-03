@@ -13,6 +13,7 @@ export const ENDPOINTS = {
   USER: {
     PROFILE: 'user/profile',
     EDIT: 'user/edit',
+    GET_ALL: 'user/',
   },
   RATING: {
     REGISTER: 'rating/register',

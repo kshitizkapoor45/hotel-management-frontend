@@ -22,21 +22,33 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { mockUsers } from '@/lib/mock-data';
 import { User } from '@/lib/types';
 import { EmptyState } from '@/components/empty-state';
+import { useGetUsersQuery } from '@/lib/store/services/userApi';
+import { Loader2, AlertCircle } from 'lucide-react';
 
 export default function UsersAdminPage() {
-  const [users, setUsers] = useState(mockUsers);
+  const { data: apiUsers, isLoading, isError, error } = useGetUsersQuery();
   const [searchQuery, setSearchQuery] = useState('');
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [editForm, setEditForm] = useState({ name: '', email: '', mobile: '' });
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
+  // Map API users to User type expected by UI
+  const users: User[] = apiUsers?.map((u, index) => ({
+    id: u.email, // Using email as ID since API doesn't provide one
+    name: u.name,
+    email: u.email,
+    mobile: u.mobileNumber || 'N/A',
+    location: u.location || 'Unknown',
+    role: 'user', // Defaulting to user as API doesn't provide role
+  })) || [];
+
   const filteredUsers = users.filter(
     (user) =>
       user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchQuery.toLowerCase())
+      user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (user.location && user.location.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   const handleEdit = (user: User) => {
@@ -45,21 +57,36 @@ export default function UsersAdminPage() {
   };
 
   const handleSaveEdit = () => {
+    // Note: Edit functionality requires a separate API call if we want to persist it
     if (!editingUser) return;
-    setUsers(
-      users.map((u) =>
-        u.id === editingUser.id
-          ? { ...u, ...editForm }
-          : u
-      )
-    );
+    console.log('Save edit for user:', editForm);
     setEditingUser(null);
   };
 
   const handleDelete = (userId: string) => {
-    setUsers(users.filter((u) => u.id !== userId));
+    // Note: Delete functionality requires a separate API call if we want to persist it
+    console.log('Delete user with ID:', userId);
     setDeleteConfirm(null);
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="text-muted-foreground">Loading users...</p>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+        <AlertCircle className="h-8 w-8 text-destructive" />
+        <p className="text-muted-foreground">Failed to load users. Please try again later.</p>
+        <p className="text-xs text-muted-foreground">{JSON.stringify(error)}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="p-8">
@@ -94,7 +121,7 @@ export default function UsersAdminPage() {
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Mobile</TableHead>
-                  <TableHead>Role</TableHead>
+                  <TableHead>Location</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -104,17 +131,7 @@ export default function UsersAdminPage() {
                     <TableCell className="font-medium">{user.name}</TableCell>
                     <TableCell>{user.email}</TableCell>
                     <TableCell>{user.mobile}</TableCell>
-                    <TableCell>
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          user.role === 'admin'
-                            ? 'bg-primary/10 text-primary'
-                            : 'bg-secondary text-secondary-foreground'
-                        }`}
-                      >
-                        {user.role}
-                      </span>
-                    </TableCell>
+                    <TableCell>{user.location}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
                         <Button

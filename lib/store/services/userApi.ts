@@ -52,7 +52,7 @@ const baseQueryWithReauth: BaseQueryFn<
 export const userApi = createApi({
   reducerPath: 'userApi',
   baseQuery: baseQueryWithReauth,
-  tagTypes: ['UserProfile'],
+  tagTypes: ['UserProfile', 'UsersList'],
   endpoints: (builder) => ({
     getProfile: builder.query<UserProfile, void>({
       query: () => ENDPOINTS.USER.PROFILE,
@@ -66,7 +66,11 @@ export const userApi = createApi({
       }),
       invalidatesTags: ['UserProfile'],
     }),
+    getUsers: builder.query<UserProfile[], void>({
+      query: () => ENDPOINTS.USER.GET_ALL,
+      providesTags: ['UsersList'],
+    }),
   }),
 });
 
-export const { useGetProfileQuery, useUpdateProfileMutation } = userApi;
+export const { useGetProfileQuery, useUpdateProfileMutation, useGetUsersQuery } = userApi;
