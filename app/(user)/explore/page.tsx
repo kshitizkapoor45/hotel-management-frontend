@@ -6,11 +6,12 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { HotelCard } from '@/components/hotel-card';
 import { HotelSkeletonGrid } from '@/components/hotel-skeleton';
-import { useGetHotelsQuery, useGetRecommendationsQuery } from '@/lib/store/services/hotelApi';
+import { useGetHotelsQuery, useGetRecommendationsQuery, useLazySearchHotelsQuery } from '@/lib/store/services/hotelApi';
 import { useAuth } from '@/lib/store/useAuth';
 
 export default function ExplorePage() {
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const { isAuthenticated } = useAuth();
@@ -19,11 +20,25 @@ export default function ExplorePage() {
     skip: !isAuthenticated,
   });
 
-  const filteredHotels = (hotels || []).filter(
-    (hotel) =>
-      hotel.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      hotel.location.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const [triggerSearch, { data: searchResults, isFetching: isSearching }] = useLazySearchHotelsQuery();
+
+  const handleSearch = () => {
+    if (searchQuery.trim()) {
+      setDebouncedQuery(searchQuery); // Still use debouncedQuery to switch views
+      triggerSearch(searchQuery);
+    } else {
+      setDebouncedQuery('');
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
+
+  const displayHotels = debouncedQuery ? (searchResults || []) : (hotels || []);
+  const isLoading = isLoadingHotels || isLoadingRecommended || isSearching;
 
   const scrollLeft = () => {
     scrollContainerRef.current?.scrollBy({ left: -320, behavior: 'smooth' });
@@ -32,8 +47,6 @@ export default function ExplorePage() {
   const scrollRight = () => {
     scrollContainerRef.current?.scrollBy({ left: 320, behavior: 'smooth' });
   };
-
-  const isLoading = isLoadingHotels || isLoadingRecommended;
 
   return (
     <div className="container mx-auto px-4 py-6">
@@ -46,15 +59,21 @@ export default function ExplorePage() {
           <p className="text-muted-foreground text-lg mb-6">
             AI-powered recommendations to find the ideal hotel for your next adventure
           </p>
-          <div className="relative max-w-xl">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Search by hotel name or location..."
-              className="pl-12 h-12 text-base bg-background border-border shadow-sm"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+          <div className="flex gap-2 max-w-xl">
+            <div className="relative flex-1">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Search by hotel name or location..."
+                className="pl-12 h-12 text-base bg-background border-border shadow-sm"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={handleKeyDown}
+              />
+            </div>
+            <Button onClick={handleSearch} className="h-12 px-6">
+              Search
+            </Button>
           </div>
         </div>
       </section>
@@ -106,19 +125,20 @@ export default function ExplorePage() {
       {/* All Hotels Grid */}
       <section>
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold text-foreground">
+          <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
             {searchQuery ? `Search Results for "${searchQuery}"` : 'All Hotels'}
+            {isSearching && <span className="text-sm font-normal text-muted-foreground animate-pulse">(Searching...)</span>}
           </h2>
           <span className="text-sm text-muted-foreground">
-            {filteredHotels.length} hotels found
+            {displayHotels.length} hotels found
           </span>
         </div>
 
         {isLoading ? (
           <HotelSkeletonGrid count={6} />
-        ) : filteredHotels.length > 0 ? (
+        ) : displayHotels.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredHotels.map((hotel) => (
+            {displayHotels.map((hotel) => (
               <HotelCard key={hotel.id} hotel={hotel} />
             ))}
           </div>

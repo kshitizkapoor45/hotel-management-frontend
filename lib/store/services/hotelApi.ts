@@ -33,6 +33,12 @@ export interface FileUploadResponse {
   message: string;
 }
 
+export interface HotelSearchItem {
+  hotelId: string;
+  score: number;
+  hotel: Partial<Hotel> & { id: string; name: string; location: string };
+}
+
 const baseQuery = fetchBaseQuery({
   baseUrl: HOTEL_SERVICE_BASE_URL,
   prepareHeaders: (headers) => {
@@ -136,6 +142,30 @@ export const hotelApi = createApi({
         body: formData,
       }),
     }),
+    searchHotels: builder.query<Hotel[], string>({
+      query: (key) => ({
+        url: ENDPOINTS.AI.SEARCH,
+        params: { key },
+      }),
+      providesTags: ['Hotel'],
+      transformResponse: (response: HotelSearchItem[]) => {
+        if (!Array.isArray(response)) return [];
+        return response.map((item) => {
+          const hotel = item?.hotel;
+          return {
+            ...hotel,
+            id: hotel?.id || '',
+            name: hotel?.name || '',
+            location: hotel?.location || '',
+            rating: hotel?.rating || 0,
+            reviewCount: hotel?.reviewCount || 0,
+            imageUrl: hotel?.imageUrl || '',
+            amenities: hotel?.amenities || [],
+            about: hotel?.about || '',
+          } as Hotel;
+        });
+      },
+    }),
   }),
 });
 
@@ -144,5 +174,7 @@ export const {
   useGetRecommendationsQuery,
   useRegisterHotelMutation,
   useUpdateHotelMutation,
-  useUploadHotelImageMutation
+  useUploadHotelImageMutation,
+  useSearchHotelsQuery,
+  useLazySearchHotelsQuery,
 } = hotelApi;

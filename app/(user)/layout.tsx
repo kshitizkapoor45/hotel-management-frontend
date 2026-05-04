@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { Navbar } from '@/components/navbar';
 
 export default function UserLayout({
@@ -8,11 +7,9 @@ export default function UserLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [, setSearchQuery] = useState('');
-
   return (
     <div className="min-h-screen bg-background">
-      <Navbar onSearch={setSearchQuery} />
+      <Navbar />
       <main>{children}</main>
     </div>
   );

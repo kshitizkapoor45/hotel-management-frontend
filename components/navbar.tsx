@@ -16,14 +16,11 @@ import {
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/store/useAuth';
 
-interface NavbarProps {
-  onSearch?: (query: string) => void;
-}
+interface NavbarProps {}
 
-export function Navbar({ onSearch }: NavbarProps) {
+export function Navbar({}: NavbarProps) {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
   const { token, logIn, logOut, isAdmin } = useAuth();
   const [mounted, setMounted] = useState(false);
 
@@ -51,10 +48,6 @@ export function Navbar({ onSearch }: NavbarProps) {
     ? [...publicLinks, ...privateLinks, ...(isAdmin ? adminLinks : [])] 
     : publicLinks;
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSearch?.(searchQuery);
-  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -67,20 +60,6 @@ export function Navbar({ onSearch }: NavbarProps) {
             </div>
             <span className="text-xl font-bold text-foreground hidden sm:block">StayWise</span>
           </Link>
-
-          {/* Search Bar - Desktop */}
-          <form onSubmit={handleSearch} className="hidden md:flex flex-1 max-w-md mx-4">
-            <div className="relative w-full">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Search hotels..."
-                className="pl-10 w-full"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-          </form>
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-1">

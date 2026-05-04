@@ -19,4 +19,7 @@ export const ENDPOINTS = {
     REGISTER: 'rating/register',
     GET_USER_RATINGS: 'rating/user',
   },
+  AI: {
+    SEARCH: 'ai/public/hotel-search',
+  },
 };
