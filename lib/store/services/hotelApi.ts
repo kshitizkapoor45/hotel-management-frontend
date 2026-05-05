@@ -33,6 +33,23 @@ export interface FileUploadResponse {
   message: string;
 }
 
+export interface AIReview {
+  summary: string;
+  pros: string[];
+  cons: string[];
+}
+
+export interface Rating {
+  rating: number;
+  feedback: string;
+}
+
+export interface HotelDetailResponse {
+  hotel: Hotel;
+  aiReview: AIReview;
+  ratings: Rating[];
+}
+
 export interface HotelSearchItem {
   hotelId: string;
   score: number;
@@ -166,6 +183,25 @@ export const hotelApi = createApi({
         });
       },
     }),
+    getHotelById: builder.query<HotelDetailResponse, string>({
+      query: (id) => `${ENDPOINTS.HOTEL.GET_BY_ID}${id}`,
+      providesTags: (result, error, id) => [{ type: 'Hotel', id }],
+      transformResponse: (response: any) => {
+        const hotel = response?.hotel || {};
+        const ratings = response?.ratings || [];
+        const totalRating = ratings.reduce((sum: number, r: any) => sum + (r?.rating || 0), 0);
+        const avgRating = ratings.length > 0 ? totalRating / ratings.length : 0;
+
+        return {
+          ...response,
+          hotel: {
+            ...hotel,
+            rating: parseFloat(avgRating.toFixed(1)),
+            reviewCount: ratings.length,
+          }
+        } as HotelDetailResponse;
+      },
+    }),
   }),
 });
 
@@ -177,4 +213,5 @@ export const {
   useUploadHotelImageMutation,
   useSearchHotelsQuery,
   useLazySearchHotelsQuery,
+  useGetHotelByIdQuery,
 } = hotelApi;

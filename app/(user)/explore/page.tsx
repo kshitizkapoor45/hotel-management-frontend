@@ -1,4 +1,5 @@
 'use client';
+// Force rebuild to fix 404
 
 import { useState, useEffect, useRef } from 'react';
 import { Search, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';

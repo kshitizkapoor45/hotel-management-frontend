@@ -5,6 +5,7 @@ export const HOTEL_SERVICE_BASE_URL = 'http://localhost:8094/api/';
 export const ENDPOINTS = {
   HOTEL: {
     GET_ALL: 'hotel/public/all',
+    GET_BY_ID: 'hotel/public/',
     REGISTER: 'hotel/register',
     EDIT: 'hotel/edit',
     FILE_UPLOAD: 'hotel/file-upload',
