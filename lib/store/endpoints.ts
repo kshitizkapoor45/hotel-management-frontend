@@ -9,7 +9,6 @@ export const ENDPOINTS = {
     REGISTER: 'hotel/register',
     EDIT: 'hotel/edit',
     FILE_UPLOAD: 'hotel/file-upload',
-    RECOMMENDATIONS: 'hotel/recommendations',
   },
   USER: {
     PROFILE: 'user/profile',
@@ -22,5 +21,6 @@ export const ENDPOINTS = {
   },
   AI: {
     SEARCH: 'ai/public/hotel-search',
+    RECOMMENDATIONS: 'ai/hotel-recommendations',
   },
 };

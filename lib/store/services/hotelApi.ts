@@ -3,6 +3,8 @@ import { HOTEL_SERVICE_BASE_URL, ENDPOINTS } from '../endpoints';
 import { getAccessTokenValue } from '../features/auth/authTokenProvider';
 import keycloak from '../features/auth/keycloak';
 
+const DEFAULT_HOTEL_IMAGE = 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=2070&auto=format&fit=crop';
+
 export interface Hotel {
   id: string;
   name: string;
@@ -111,6 +113,7 @@ export const hotelApi = createApi({
 
           return {
             ...hotel,
+            imageUrl: hotel?.imageUrl || DEFAULT_HOTEL_IMAGE,
             rating: parseFloat(avgRating.toFixed(1)),
             reviewCount: ratings.length,
           };
@@ -118,7 +121,7 @@ export const hotelApi = createApi({
       },
     }),
     getRecommendations: builder.query<Hotel[], void>({
-      query: () => ENDPOINTS.HOTEL.RECOMMENDATIONS,
+      query: () => ENDPOINTS.AI.RECOMMENDATIONS,
       providesTags: ['Hotel'],
       transformResponse: (response: any) => {
         if (!Array.isArray(response)) return [];
@@ -130,6 +133,7 @@ export const hotelApi = createApi({
 
           return {
             ...hotel,
+            imageUrl: hotel?.imageUrl || DEFAULT_HOTEL_IMAGE,
             rating: parseFloat(avgRating.toFixed(1)),
             reviewCount: ratings.length,
           };
@@ -176,7 +180,7 @@ export const hotelApi = createApi({
             location: hotel?.location || '',
             rating: hotel?.rating || 0,
             reviewCount: hotel?.reviewCount || 0,
-            imageUrl: hotel?.imageUrl || '',
+            imageUrl: hotel?.imageUrl || DEFAULT_HOTEL_IMAGE,
             amenities: hotel?.amenities || [],
             about: hotel?.about || '',
           } as Hotel;
@@ -196,6 +200,7 @@ export const hotelApi = createApi({
           ...response,
           hotel: {
             ...hotel,
+            imageUrl: hotel?.imageUrl || DEFAULT_HOTEL_IMAGE,
             rating: parseFloat(avgRating.toFixed(1)),
             reviewCount: ratings.length,
           }
